@@ -1,14 +1,15 @@
 import hashlib
+import os
 import secrets
 from datetime import datetime, UTC
 
 from fastapi import FastAPI, HTTPException, Header
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 from google.cloud import firestore
 
 app = FastAPI()
-db = firestore.Client(project="demo-chatapp")
+db = firestore.Client(project="chat-app-500821")
 
 
 class RegisterRequest(BaseModel):
@@ -49,6 +50,40 @@ def get_username_from_token(authorization: str) -> str:
 @app.get("/")
 def index():
     return FileResponse("static/index.html")
+
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin():
+    collections = ["users", "sessions", "rooms", "messages"]
+    rows = ""
+    for col in collections:
+        docs = db.collection(col).stream()
+        for doc in docs:
+            rows += f"<tr><td>{col}</td><td>{doc.id}</td><td><pre>{doc.to_dict()}</pre></td></tr>"
+    return f"""
+    <html><head><title>Admin</title>
+    <style>
+        body {{ font-family: monospace; padding: 2rem; }}
+        table {{ border-collapse: collapse; width: 100%; }}
+        th, td {{ border: 1px solid #ddd; padding: 0.5rem; text-align: left; vertical-align: top; }}
+        th {{ background: #f0f0f0; }}
+        pre {{ margin: 0; white-space: pre-wrap; }}
+    </style></head>
+    <body><h2>Firestore Data</h2>
+    <table><tr><th>Collection</th><th>ID</th><th>Data</th></tr>
+    {rows}
+    </table></body></html>
+    """
+
+
+@app.get("/debug")
+def debug():
+    emulator_host = os.environ.get("FIRESTORE_EMULATOR_HOST")
+    return {
+        "firestore_project": db.project,
+        "firestore_emulator_host": emulator_host,
+        "mode": "emulator" if emulator_host else "production",
+    }
 
 
 # --- Auth ---

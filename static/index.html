@@ -46,6 +46,11 @@
     #send-bar input { flex: 1; padding: 0.6rem; border: 1px solid #ddd; border-radius: 20px; font-size: 0.95rem; outline: none; }
     #send-bar button { padding: 0.6rem 1.25rem; background: #1a73e8; color: white; border: none; border-radius: 20px; cursor: pointer; }
     #no-room { flex: 1; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 1.1rem; }
+
+    /* Debug bar */
+    #debug-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1e1e1e; color: #0f0; font-family: monospace; font-size: 0.75rem; padding: 0.4rem 1rem; display: flex; gap: 2rem; z-index: 999; }
+    #debug-bar span { color: #888; }
+    #debug-bar .warn { color: #f90; }
   </style>
 </head>
 <body>
@@ -96,7 +101,29 @@
   </div>
 </div>
 
+<!-- Debug Bar -->
+<div id="debug-bar">
+  <div><span>mode: </span><span id="dbg-mode">...</span></div>
+  <div><span>project: </span><span id="dbg-project">...</span></div>
+  <div><span>emulator: </span><span id="dbg-emulator">...</span></div>
+</div>
+
 <script>
+  // Load debug info on page load
+  (async () => {
+    try {
+      const res = await fetch('/debug');
+      const d = await res.json();
+      const modeEl = document.getElementById('dbg-mode');
+      modeEl.textContent = d.mode;
+      modeEl.className = d.mode === 'emulator' ? '' : 'warn';
+      document.getElementById('dbg-project').textContent = d.firestore_project;
+      document.getElementById('dbg-emulator').textContent = d.firestore_emulator_host ?? 'none';
+    } catch {
+      document.getElementById('dbg-mode').textContent = 'error reaching /debug';
+    }
+  })();
+
   let token = null;
   let username = null;
   let currentRoom = null;
