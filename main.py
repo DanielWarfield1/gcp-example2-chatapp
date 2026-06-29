@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from google.cloud import firestore
 
 app = FastAPI()
-db = firestore.Client(project="chat-app-500821")
+db = firestore.Client(project="chat-app-500821", database="chat-app-db")
 
 
 class RegisterRequest(BaseModel):
