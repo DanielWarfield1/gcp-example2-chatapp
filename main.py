@@ -164,10 +164,9 @@ def get_messages(room_id: str):
     docs = (
         db.collection("messages")
         .where("room_id", "==", room_id)
-        .order_by("timestamp")
         .stream()
     )
-    return [
+    messages = [
         {
             "message_id": doc.id,
             "username": doc.to_dict()["username"],
@@ -176,6 +175,7 @@ def get_messages(room_id: str):
         }
         for doc in docs
     ]
+    return sorted(messages, key=lambda m: m["timestamp"])
 
 
 @app.delete("/messages/{message_id}")
